@@ -103,11 +103,11 @@ pretrained parameters, run e.g.:
 ```bash
 python3 run_pretrained_openfold.py \
     target.fasta \
-    data/uniref90/uniref90.fasta \
-    data/mgnify/mgy_clusters_2018_12.fa \
-    data/pdb70/pdb70 \
     data/pdb_mmcif/mmcif_files/ \
-    data/uniclust30/uniclust30_2018_08/uniclust30_2018_08 \
+    --uniref90_database_path data/uniref90/uniref90.fasta \
+    --mgnify_database_path data/mgnify/mgy_clusters_2018_12.fa \
+    --pdb70_database_path data/pdb70/pdb70 \
+    --uniclust30_database_path data/uniclust30/uniclust30_2018_08/uniclust30_2018_08 \
     --output_dir ./ \
     --bfd_database_path data/bfd/bfd_metaclust_clu_complete_id30_c90_final_seq.sorted_opt \
     --model_device cuda:1 \
@@ -121,7 +121,7 @@ where `data` is the same directory as in the previous step. If `jackhmmer`,
 `hhblits`, `hhsearch` and `kalign` are available at the default path of 
 `/usr/bin`, their `binary_path` command-line arguments can be dropped.
 If you've already computed alignments for the query, you have the option to 
-circumvent the expensive alignment computation here.
+skip the expensive alignment computation here.
 
 Note that chunking (as defined in section 1.11.8 of the AlphaFold 2 supplement)
 is enabled by default in inference mode. To disable it, set `globals.chunk_size`
@@ -198,6 +198,7 @@ python3 train_openfold.py mmcif_dir/ alignment_dir/ template_mmcif_dir/ \
     --gpus 8 --replace_sampler_ddp=True \
     --seed 42 \ # in multi-gpu settings, the seed must be specified
     --deepspeed_config_path deepspeed_config.json \
+    --checkpoint_every_epoch \
     --resume_from_ckpt ckpt_dir/
 ```
 
@@ -268,11 +269,11 @@ docker run \
 -ti openfold:latest \
 python3 /opt/openfold/run_pretrained_openfold.py \
 /data/input.fasta \
-/database/uniref90/uniref90.fasta \
-/database/mgnify/mgy_clusters_2018_12.fa \
-/database/pdb70/pdb70 \
 /database/pdb_mmcif/mmcif_files/ \
-/database/uniclust30/uniclust30_2018_08/uniclust30_2018_08 \
+--uniref90_database_path /database/uniref90/uniref90.fasta \
+--mgnify_database_path /database/mgnify/mgy_clusters_2018_12.fa \
+--pdb70_database_path /database/pdb70/pdb70 \
+--uniclust30_database_path /database/uniclust30/uniclust30_2018_08/uniclust30_2018_08 \
 --output_dir /data \
 --bfd_database_path /database/bfd/bfd_metaclust_clu_complete_id30_c90_final_seq.sorted_opt \
 --model_device cuda:0 \
@@ -289,7 +290,7 @@ While AlphaFold's and, by extension, OpenFold's source code is licensed under
 the permissive Apache Licence, Version 2.0, DeepMind's pretrained parameters 
 fall under the CC BY 4.0 license, a copy of which is downloaded to 
 `openfold/resources/params` by the installation script. Note that the latter
-replaced the original, more restrictive CC BY-NC 4.0 license as of January 2022.
+replaces the original, more restrictive CC BY-NC 4.0 license as of January 2022.
 
 ## Contributing
 
