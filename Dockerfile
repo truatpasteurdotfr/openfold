@@ -1,6 +1,11 @@
 FROM nvidia/cuda:11.2.2-cudnn8-runtime-ubuntu18.04
 
+RUN apt-key del 7fa2af80
+RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
+RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/3bf863cc.pub
+
 RUN apt-get update && apt-get install -y wget cuda-minimal-build-11-2 git
+
 RUN wget -P /tmp \
     "https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh" \
     && bash /tmp/Miniconda3-latest-Linux-x86_64.sh -b -p /opt/conda \
@@ -21,4 +26,5 @@ COPY lib/openmm.patch /opt/openfold/lib/openmm.patch
 RUN wget -q -P /opt/openfold/openfold/resources \
     https://git.scicore.unibas.ch/schwede/openstructure/-/raw/7102c63615b64735c4941278d92b554ec94415f8/modules/mol/alg/src/stereo_chemical_props.txt
 RUN patch -p0 -d /opt/conda/lib/python3.7/site-packages/ < /opt/openfold/lib/openmm.patch
-RUN python3 /opt/openfold/setup.py install
+WORKDIR /opt/openfold
+RUN python3 setup.py install
