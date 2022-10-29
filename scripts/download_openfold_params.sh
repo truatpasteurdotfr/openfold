@@ -14,9 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Downloads and unzips the Small BFD database for AlphaFold.
+# Downloads OpenFold parameters.
 #
-# Usage: bash download_small_bfd.sh /path/to/download/directory
+# Usage: bash download_openfold_params_huggingface.sh /path/to/download/directory
 set -e
 
 if [[ $# -eq 0 ]]; then
@@ -24,18 +24,11 @@ if [[ $# -eq 0 ]]; then
     exit 1
 fi
 
-if ! command -v aria2c &> /dev/null ; then
-    echo "Error: aria2c could not be found. Please install aria2c (sudo apt install aria2)."
+if ! command -v aws &> /dev/null ; then
+    echo "Error: aws could not be found. Please install aws."
     exit 1
 fi
 
-DOWNLOAD_DIR="$1"
-ROOT_DIR="${DOWNLOAD_DIR}/small_bfd"
-SOURCE_URL="https://storage.googleapis.com/alphafold-databases/reduced_dbs/bfd-first_non_consensus_sequences.fasta.gz"
-BASENAME=$(basename "${SOURCE_URL}")
-
-mkdir --parents "${ROOT_DIR}"
-aria2c "${SOURCE_URL}" --dir="${ROOT_DIR}"
-pushd "${ROOT_DIR}"
-gunzip "${ROOT_DIR}/${BASENAME}"
-popd
+DOWNLOAD_DIR="${1}/openfold_params"
+mkdir -p "${DOWNLOAD_DIR}"
+aws s3 cp --no-sign-request --region us-east-1 s3://openfold/openfold_params/ "${DOWNLOAD_DIR}" --recursive

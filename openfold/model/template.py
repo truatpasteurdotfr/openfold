@@ -14,6 +14,7 @@
 # limitations under the License.
 from functools import partial
 import math
+import sys
 from typing import Optional, List
 
 import torch
@@ -393,7 +394,7 @@ class TemplatePairStack(nn.Module):
             )
             blocks = [
                 partial(b, 
-                    chunk_size=chunk_size,
+                    chunk_size=tuned_chunk_size,
                     _attn_chunk_size=max(chunk_size, tuned_chunk_size // 4),
                 ) for b in blocks
             ]
@@ -448,7 +449,7 @@ def embed_templates_offload(
     for i in range(n_templ):
         idx = batch["template_aatype"].new_tensor(i)
         single_template_feats = tensor_tree_map(
-            lambda t: torch.index_select(t, templ_dim, idx),
+            lambda t: torch.index_select(t, templ_dim, idx).squeeze(templ_dim),
             batch,
         )
 
@@ -464,12 +465,14 @@ def embed_templates_offload(
 
         # [*, 1, N, N, C_z]
         t = model.template_pair_stack(
-            t,
+            t.unsqueeze(templ_dim),
             pair_mask.unsqueeze(-3).to(dtype=z.dtype), 
             chunk_size=model.globals.chunk_size,
             use_lma=model.globals.use_lma,
             _mask_trans=model.config._mask_trans,
         )
+
+        assert(sys.getrefcount(t) == 2)
 
         pair_embeds_cpu.append(t.cpu())
 

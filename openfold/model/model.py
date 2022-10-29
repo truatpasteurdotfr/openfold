@@ -79,24 +79,29 @@ class AlphaFold(nn.Module):
         self.recycling_embedder = RecyclingEmbedder(
             **self.config["recycling_embedder"],
         )
-        self.template_angle_embedder = TemplateAngleEmbedder(
-            **self.template_config["template_angle_embedder"],
-        )
-        self.template_pair_embedder = TemplatePairEmbedder(
-            **self.template_config["template_pair_embedder"],
-        )
-        self.template_pair_stack = TemplatePairStack(
-            **self.template_config["template_pair_stack"],
-        )
-        self.template_pointwise_att = TemplatePointwiseAttention(
-            **self.template_config["template_pointwise_attention"],
-        )
-        self.extra_msa_embedder = ExtraMSAEmbedder(
-            **self.extra_msa_config["extra_msa_embedder"],
-        )
-        self.extra_msa_stack = ExtraMSAStack(
-            **self.extra_msa_config["extra_msa_stack"],
-        )
+        
+        if(self.template_config.enabled):
+            self.template_angle_embedder = TemplateAngleEmbedder(
+                **self.template_config["template_angle_embedder"],
+            )
+            self.template_pair_embedder = TemplatePairEmbedder(
+                **self.template_config["template_pair_embedder"],
+            )
+            self.template_pair_stack = TemplatePairStack(
+                **self.template_config["template_pair_stack"],
+            )
+            self.template_pointwise_att = TemplatePointwiseAttention(
+                **self.template_config["template_pointwise_attention"],
+            )
+       
+        if(self.extra_msa_config.enabled):
+            self.extra_msa_embedder = ExtraMSAEmbedder(
+                **self.extra_msa_config["extra_msa_embedder"],
+            )
+            self.extra_msa_stack = ExtraMSAStack(
+                **self.extra_msa_config["extra_msa_stack"],
+            )
+        
         self.evoformer = EvoformerStack(
             **self.config["evoformer_stack"],
         )
@@ -133,7 +138,7 @@ class AlphaFold(nn.Module):
         for i in range(n_templ):
             idx = batch["template_aatype"].new_tensor(i)
             single_template_feats = tensor_tree_map(
-                lambda t: torch.index_select(t, templ_dim, idx),
+                lambda t: torch.index_select(t, templ_dim, idx).squeeze(templ_dim),
                 batch,
             )
 
@@ -155,7 +160,7 @@ class AlphaFold(nn.Module):
             del t
 
         if(not inplace_safe):
-            t_pair = torch.cat(pair_embeds, dim=templ_dim)
+            t_pair = torch.stack(pair_embeds, dim=templ_dim)
        
         del pair_embeds
 
@@ -178,10 +183,16 @@ class AlphaFold(nn.Module):
             use_lma=self.globals.use_lma,
         )
 
+        t_mask = torch.sum(batch["template_mask"], dim=-1) > 0
+        # Append singletons
+        t_mask = t_mask.reshape(
+            *t_mask.shape, *([1] * (len(t.shape) - len(t_mask.shape)))
+        )
+
         if(inplace_safe):
-            t *= (torch.sum(batch["template_mask"], dim=-1) > 0)
+            t *= t_mask
         else:
-            t = t * (torch.sum(batch["template_mask"], dim=-1) > 0)
+            t = t * t_mask
 
         ret = {}
 
@@ -387,6 +398,7 @@ class AlphaFold(nn.Module):
                 pair_mask=pair_mask.to(dtype=z.dtype),
                 chunk_size=self.globals.chunk_size,
                 use_lma=self.globals.use_lma,
+                use_flash=self.globals.use_flash,
                 inplace_safe=inplace_safe,
                 _mask_trans=self.config._mask_trans,
             )
