@@ -12,7 +12,7 @@ RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/
 RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/3bf863cc.pub
 
 RUN apt-get update && apt-get install -y wget cuda-minimal-build-11-3 git \
-libxml2 libcusparse-dev-11-3 libcublas-dev-11-3 libcusolver-dev-11-3 \
+libxml2 libcusparse-dev-11-3 libcublas-dev-11-3 libcusolver-dev-11-3 
 
 RUN wget -P /tmp \
     "https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh" \
